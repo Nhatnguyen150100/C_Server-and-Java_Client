@@ -17,7 +17,7 @@ typedef struct {
 
 // Account* makeAccount(char* nameAccount, char* passwordAccount);
 bool checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
-bool createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
+int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, MYSQL_RES *result);
 void finish_with_error(MYSQL *con);
 char* removeEnterCharacter(char* str);
@@ -45,8 +45,9 @@ bool checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result)
     }
 }
 
-char* indexOfRowAcount(MYSQL *con, MYSQL_RES *result){
+int indexOfRowAcount(MYSQL *con, MYSQL_RES *result){
     char *index;
+    char inValue[0];
     if (mysql_query(con, "SELECT MAX(idaccount) FROM account")){
       finish_with_error(con);
     }
@@ -59,24 +60,21 @@ char* indexOfRowAcount(MYSQL *con, MYSQL_RES *result){
     MYSQL_ROW row;
     row = mysql_fetch_row(result);
 
-    index = row[0]; 
-    char value = index[0];
-    int value2 = value + '1';
-    index[0] = value2;
-    return index;
+    index = row[0];
+    int value = atoi(index);
+    return value + 1;
 }
 
-bool createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
-    char* index = indexOfRowAcount(con,result);
+int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
+    int index = indexOfRowAcount(con,result);
+    printf("index: %d\n", index);
+    // printf("start!");
     char query[1000];
-    sprintf(query,"INSERT INTO account values(%s,\'%s\',%s)", index,name,password);
-    printf("query insert: %s", query);
-    if (mysql_query(con, query)){
-        // finish_with_error(con);
-      return false;
-    }else{
-        return true;
-    }
+    printf("query insert: %s\n", query);
+    sprintf(query,"INSERT INTO account values (%d,\'%s\',%s)", index,name,password);
+    printf("query insert: %s\n", query);
+    mysql_query(con,query);
+    return index;
 }
 
 // bool checkPasswordAccount(char* nameAccoount,  char* passwordAccount, MYSQL *con, MYSQL_RES *result){

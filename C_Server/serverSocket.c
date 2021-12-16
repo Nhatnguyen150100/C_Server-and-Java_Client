@@ -142,21 +142,22 @@ void *connection_handler(void *newSocket){
             }
         }else{
             bool checkName = checkNameAccount(accountName,accountPassword,con,result);
-            bool checkCreate = createNewAccount(accountName,accountPassword,con,result);
-            if(checkCreate == false){
-                printf("check create false");
-            }
-            if((checkName == true) || (checkCreate == false)){
+            if((checkName == true)){
                 char accountErrorMessage[1000] = "Create a account error: Account already exists\n";
                 printf("check account error\n");
                 write(socket, accountErrorMessage, sizeof(accountErrorMessage));
                 bzero(accountErrorMessage,sizeof(accountErrorMessage));
                 // send_status=send(socket , server_send_message , strlen(server_send_message),0);
-            }else if((checkName == false) && (checkName == true)){
+            }else{
+                int idUser = createNewAccount(accountName,accountPassword,con,result);
                 char accountSuccessMessage[1000] = "Create a account successfully: Please enter personal information\n";
-                printf("check account ok\n");
+                printf("Insert account ok\n");
+                char idser[10];
+                sprintf(idser, "%d\n",idUser);
                 write(socket, accountSuccessMessage, sizeof(accountSuccessMessage));
+                write(socket, idser, sizeof(idser));
                 bzero(accountSuccessMessage,sizeof(accountSuccessMessage));
+                bzero(idser,sizeof(idser));
                 // send_status=send(socket , server_message_wrong , strlen(server_message_wrong),0);
             }
         }
