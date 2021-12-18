@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 
 class ClientJava {
-    private void menuChoice(Socket socket) throws IOException {
+    private void menuChoice(Socket socket, account user) throws IOException {
         int choice;
         Scanner scanner = new Scanner(System.in);
         System.out.println("Welcome to PC COVID");
@@ -23,7 +23,7 @@ class ClientJava {
                 BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream), 1024);
                 System.out.print("Name: ");
                 input(socket);
-                checkOutPut(receiveRead, socket);
+                checkOutPut(receiveRead, socket, user);
             }
             case 2 -> {
                 sendAccountMessage(String.valueOf(choice),socket);
@@ -32,7 +32,7 @@ class ClientJava {
                 System.out.println("Create a account:\n");
                 System.out.print("NameAccount: ");
                 input(socket);
-                checkOutPut(receiveRead, socket);
+                checkOutPut(receiveRead, socket, user);
             }
             default -> {
                 System.out.println("Error: unachievable");
@@ -60,7 +60,8 @@ class ClientJava {
         sendAccountMessage(accountMessage, socket);
     }
 
-    private void checkOutPut(BufferedReader receiveRead, Socket socket) throws IOException {
+
+    private void checkOutPut(BufferedReader receiveRead, Socket socket, account user) throws IOException {
         String receiveMessage;
         receiveMessage = String.valueOf(receiveRead.readLine());
         receiveMessage = removeNonAscii(receiveMessage);
@@ -70,14 +71,114 @@ class ClientJava {
             System.out.print("from server: ");
             System.out.println(receiveMessage); // displaying at DOS prompt
             if(receiveMessage.equals("Login successfully: Welcome to PC COVID")){
-                System.out.println("trang chu");
+                System.out.println("\n--HOME PAGE--");
+                homePage(receiveRead,socket, user);
             }else if(receiveMessage.equals("Create a account successfully: Please enter personal information")){
                 String idUser = String.valueOf(receiveRead.readLine());
                 idUser = removeNonAscii(idUser);
                 idUser = replaceUnreadable(idUser);
                 createInforAccount(idUser,socket);
+                String receiveMessage2;
+                receiveMessage2 = String.valueOf(receiveRead.readLine());
+                receiveMessage2 = removeNonAscii(receiveMessage2);
+                receiveMessage2 = replaceUnreadable(receiveMessage2);
+                if(!Objects.equals(receiveMessage2, "0")) //receive from server
+                {
+                    System.out.print("from server: ");
+                    System.out.println(receiveMessage2); // displaying at DOS prompt
+                    if(receiveMessage2.equals("Create information successfully -> Let login to PC COVID")){
+                        System.out.println("Let't go to PC COVID");
+                    }else{
+                        System.out.println("Please create a new account");
+                    }
+                    ClientJava clientJava = new ClientJava();
+                    clientJava.menuChoice(socket, user);
+                }
             }
         }
+    }
+
+    private void homePage(BufferedReader receiveRead,Socket socket, account user) throws IOException {
+//        InputStream istream = socket.getInputStream();
+//        BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream), 1024);
+        String receiveMessage2 = "";
+        receiveMessage2 = String.valueOf(receiveRead.readLine());
+        receiveMessage2 = removeNonAscii(receiveMessage2);
+        receiveMessage2 = replaceUnreadable(receiveMessage2);
+        if(!Objects.equals(receiveMessage2, "0")){
+            inputTheUser(receiveMessage2, user);
+            System.out.println(receiveMessage2);
+        }else if(receiveMessage2.equals("")){
+            System.out.println("Can't read your information!");
+        }
+        menuHomePage(socket, user);
+    }
+
+    private void menuHomePage(Socket socket, account user) throws IOException {
+        int choice;
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("-----------------------PC COVID-----------------------");
+        System.out.println("1: Xem thong tin ca nhan cua ban");
+        System.out.println("2: Khai bao y te");
+        System.out.println("3: Quet QR");
+        System.out.println("4: Chinh sua thong tin ca nhan");
+        System.out.println("5: Exit");
+        System.out.print("Your choice: ");
+        choice = scanner.nextInt();
+        switch (choice){
+            case 1 ->{
+                showYourInformation(user);
+                menuHomePage(socket,user);
+            }
+            case 2 ->{
+                System.out.println("Error: unachievable");
+            }
+            case 3 ->{
+                System.out.println("Error: unachievable3");
+            }
+            case 4 ->{
+                System.out.println("Error: unachievable2");
+            }
+            case 5 ->{
+                sendAccountMessage(String.valueOf(choice),socket);
+                ClientJava clientJava = new ClientJava();
+                clientJava.menuChoice(socket, user);
+            }
+            case 6 ->{
+                System.out.println("Error: unachievable1");
+            }
+        }
+    }
+
+    private void showYourInformation(account user){
+        showInfor(user);
+    }
+
+    private void showInfor(account user) {
+        System.out.println("--------- Your information ---------");
+        System.out.println("ID: " + user.getIdUser());
+        System.out.println("Your name: " + user.getLastname() + " " + user.getFirstName());
+        System.out.println("Your cardId: " + user.getCardId());
+        System.out.println("Birthday (dd/mm/yyyy): " + user.getBirthOfDay());
+        System.out.println("Gender: " + user.getGender());
+        System.out.println("Number phone: " + user.getNumberPhone());
+        System.out.println("Email: " + user.getEmail());
+        System.out.println("Address: "+ user.getAddress());
+        System.out.println("State: " + user.getState());
+    }
+
+    private void inputTheUser(String receiveMessage, account user) {
+        String[] listInfor = receiveMessage.split("_");
+        user.setIdUser(listInfor[0]);
+        user.setFirstName(listInfor[1]);
+        user.setLastname(listInfor[2]);
+        user.setCardId(listInfor[3]);
+        user.setBirthOfDay(listInfor[4]);
+        user.setGender(listInfor[5]);
+        user.setNumberPhone(listInfor[6]);
+        user.setEmail(listInfor[7]);
+        user.setAddress(listInfor[8]);
+        user.setState(listInfor[9]);
     }
 
     private void createInforAccount(String idUser,Socket socket) throws IOException {
@@ -88,26 +189,26 @@ class ClientJava {
         userAccount.setFirstName(firstName);
         System.out.print("Last name: ");
         String lastName = sendAccount();
-        userAccount.setFirstName(lastName);
+        userAccount.setLastname(lastName);
         System.out.print("Your cardId: ");
         String cardId = sendAccount();
-        userAccount.setFirstName(cardId);
+        userAccount.setCardId(cardId);
         System.out.print("Birthday (dd/mm/yyyy): ");
         String birthday = sendAccount();
-        userAccount.setFirstName(birthday);
+        userAccount.setBirthOfDay(birthday);
         System.out.print("Gender: ");
         String gender = sendAccount();
-        userAccount.setFirstName(gender);
+        userAccount.setGender(gender);
         System.out.print("Number phone: ");
         String numberPhone = sendAccount();
-        userAccount.setFirstName(numberPhone);
+        userAccount.setNumberPhone(numberPhone);
         System.out.print("Email: ");
         String email = sendAccount();
-        userAccount.setFirstName(email);
+        userAccount.setEmail(email);
         System.out.print("Address: ");
         String address = sendAccount();
-        userAccount.setFirstName(address);
-        userAccount.setFirstName("normal");
+        userAccount.setAddress(address);
+        userAccount.setState("normal");
         String message = createInforAccountMessage(idUser,firstName,lastName,cardId,birthday,gender,numberPhone,email,address,"normal");
         sendAccountMessage(message,socket);
 //        System.out.println(message);
@@ -125,7 +226,7 @@ class ClientJava {
     }
 
     private String createAccountMessage(String name, String password){
-        return name+ "_"+password;
+        return name+ "_" +password;
     }
 
 
@@ -151,8 +252,9 @@ class ClientJava {
     }
 
     public static void main(String[] args) throws Exception {
+        account user = new account();
         Socket sock = new Socket("127.0.0.1", 9999);
         ClientJava clientJava = new ClientJava();
-        clientJava.menuChoice(sock);
+        clientJava.menuChoice(sock, user);
     }
 }

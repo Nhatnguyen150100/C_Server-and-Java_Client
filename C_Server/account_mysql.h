@@ -6,6 +6,7 @@
 #include<string.h>
 #include<stdbool.h>
 #include <mysql/mysql.h>
+#include "user.h"
 
 #define MAX_IDENT_LEN_NAME 100
 #define MAX_IDENT_LEN_PASSWORD 30
@@ -16,16 +17,17 @@ typedef struct {
 } Account;
 
 // Account* makeAccount(char* nameAccount, char* passwordAccount);
-bool checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
+char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, MYSQL_RES *result);
+bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 void finish_with_error(MYSQL *con);
 char* removeEnterCharacter(char* str);
 char* removeEnterCharacterFromString(char* str);
 
-bool checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
+char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
     char query[1000];
-    sprintf(query,"SELECT userName FROM account where userName = \'%s\' and password = %s", name, password);
+    sprintf(query,"SELECT idaccount FROM account where userName = \'%s\' and password = \'%s\'", name, password);
     printf("Query check account:%s\n", query);
     if (mysql_query(con, query)){
       finish_with_error(con);
@@ -35,13 +37,56 @@ bool checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result)
       finish_with_error(con);
     }
     MYSQL_ROW row;
+    char *idaccount;
     // int num_fields = mysql_num_fields(result);
     // printf("num_fields: %d\n", num_fields);
     
     if(row = mysql_fetch_row(result)){
-        return true;
+        idaccount = row[0];
+        return idaccount;
     }else{
-        return false;
+        return "false";
+    }
+}
+
+void addInforUser(User *user,char* idaccount, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"SELECT * FROM infor WHERE idUser = %s",idaccount);
+    printf("query: %s\n", query);
+    if (mysql_query(con, query)){
+      finish_with_error(con);
+    }
+    result = mysql_store_result(con);
+    if (result == NULL){
+      finish_with_error(con);
+    }
+    int num_fields = mysql_num_fields(result);
+    MYSQL_ROW row;
+    while ((row = mysql_fetch_row(result))){
+        // printf("So truong: %d\n", num_fields);
+        for(int i = 0; i < num_fields; i++){
+            if(i==0){
+                sprintf(user->idUser,"%s",row[i]);
+            }else if(i==1){
+                sprintf(user->firstName,"%s",row[i]);
+            }else if(i==2){
+                sprintf(user->lastName,"%s",row[i]);
+            }else if(i==3){
+                sprintf(user->cardId,"%s",row[i]);
+            }else if(i==4){
+                sprintf(user->birthday,"%s",row[i]);
+            }else if(i==5){
+                sprintf(user->gender,"%s",row[i]);
+            }else if(i==6){
+                sprintf(user->numberPhone,"%s",row[i]);
+            }else if(i==7){
+                sprintf(user->address,"%s",row[i]);
+            }else if(i==8){
+                sprintf(user->email,"%s",row[i]);
+            }else if(i==9){
+                sprintf(user->state,"%s",row[i]);
+            }
+        }
     }
 }
 
@@ -71,37 +116,23 @@ int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
     // printf("start!");
     char query[1000];
     printf("query insert: %s\n", query);
-    sprintf(query,"INSERT INTO account values (%d,\'%s\',%s)", index,name,password);
+    sprintf(query,"INSERT INTO account values (%d,\'%s\',\'%s\')", index,name,password);
     printf("query insert: %s\n", query);
     mysql_query(con,query);
     return index;
 }
 
-// bool checkPasswordAccount(char* nameAccoount,  char* passwordAccount, MYSQL *con, MYSQL_RES *result){
-//     char name[102] = "\'";
-//     char name_x[1] = "\'";
-//     char nameac[100] = "Nhatnguyen150100";
-//     strcat(name, nameac);
-//     strcat(name, "\'");
-//     char password[100] = "12345";
-//     char query[10000] = "SELECT password FROM account Where ";
-//     char query_1[1000] = "userName = ";
-//     strcat(query_1, name);
-//     char query_2[100] = " and password = ";
-//     strcat(query_2, password);
-//     strcat(query_1, query_2);
-//     strcat(query, query_1);
-//     if (mysql_query(con, query)){
-//       finish_with_error(con);
-//     }
-//     result = mysql_store_result(con);
-//     if (result == NULL){
-//       finish_with_error(con);
-//     }
-//     MYSQL_ROW row;
-//     row = mysql_fetch_row(result);
-//     return row;
-// }
+bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"INSERT INTO infor VALUES(%s,\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')", user->idUser,user->firstName,user->lastName,user->cardId,user->birthday,user->gender,user->numberPhone,user->address,user->email,user->state);
+    if (mysql_query(con, query)){
+        printf("INSERT INFORMATION ERROR!\n");
+      finish_with_error(con);
+    }else{
+        return true;
+    }
+}
+
 
 void finish_with_error(MYSQL *con)
 {

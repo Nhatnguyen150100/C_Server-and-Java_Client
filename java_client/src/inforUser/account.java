@@ -3,7 +3,6 @@ package inforUser;
 import java.util.Objects;
 
 public class account {
-    private String userAccount;
     private String idUser;
     private String firstName;
     private String lastname;
@@ -18,8 +17,7 @@ public class account {
     public account() {
     }
 
-    public account(String userAccount, String idUser, String firstName, String lastname, String cardId, String birthOfDay, String gender, String numberPhone, String email,String address, String state) {
-        this.userAccount = userAccount;
+    public account(String idUser, String firstName, String lastname, String cardId, String birthOfDay, String gender, String numberPhone, String email,String address, String state) {
         this.idUser = idUser;
         this.firstName = firstName;
         this.lastname = lastname;
@@ -38,14 +36,6 @@ public class account {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public String getUserAccount() {
-        return userAccount;
-    }
-
-    public void setUserAccount(String userAccount) {
-        this.userAccount = userAccount;
     }
 
     public String getIdUser() {
