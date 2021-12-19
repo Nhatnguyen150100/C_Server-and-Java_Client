@@ -1,7 +1,11 @@
 import inforUser.account;
+import inforUser.locationAndTime;
+
 import java.time.LocalDateTime; // import the LocalDateTime class
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Scanner;
 
@@ -134,26 +138,20 @@ class ClientJava {
                 sendAccountMessage(String.valueOf(choice),socket);
                 System.out.println("Nhap ma dia diem:");
                 String codeOfLocation = sendAccount();
-                //TODO
-
+                LocalDateTime timeInLocation = LocalDateTime.now();
+                sendAccountMessage(createAccountMessage(codeOfLocation,String.valueOf(timeInLocation)),socket);
+                getMessageFromServer(receiveRead, socket, user);
             }
             case 3 ->{
-                System.out.println("Error: unachievable3");
+                sendAccountMessage(String.valueOf(choice),socket);
+                showHistory(receiveRead);
+                menuHomePage(receiveRead,socket,user);
             }
             case 4 ->{
                 sendAccountMessage(String.valueOf(choice),socket);
                 String idUser = user.getIdUser();
                 createInforAccount(idUser,socket);
-                String receiveMessage2;
-                receiveMessage2 = String.valueOf(receiveRead.readLine());
-                receiveMessage2 = removeNonAscii(receiveMessage2);
-                receiveMessage2 = replaceUnreadable(receiveMessage2);
-                if(!Objects.equals(receiveMessage2, "0")) //receive from server
-                {
-                    System.out.print("from server: ");
-                    System.out.println(receiveMessage2); // displaying at DOS prompt
-                }
-                menuHomePage(receiveRead,socket,user);
+                getMessageFromServer(receiveRead, socket, user);
             }
             case 5 ->{
                 sendAccountMessage(String.valueOf(choice),socket);
@@ -165,6 +163,61 @@ class ClientJava {
             }
         }
     }
+
+    private void showHistory(BufferedReader receiveRead) throws IOException {
+        String receiveMessage;
+        receiveMessage = String.valueOf(receiveRead.readLine());
+        receiveMessage = removeNonAscii(receiveMessage);
+        receiveMessage = replaceUnreadable(receiveMessage);
+        if(!Objects.equals(receiveMessage, "0")){
+            inputLocationAndTime(receiveMessage);
+        }
+    }
+
+    private void inputLocationAndTime(String receiveMessage) {
+            int str_lent = 0;
+            List<locationAndTime> locationAndTimeList = new ArrayList<locationAndTime>();
+            char c = '_';
+            for(int i =0; i < receiveMessage.length(); i++){
+                if(receiveMessage.charAt(i) == c){
+                    str_lent++;
+                }
+            }
+            if(str_lent==0){
+                System.out.println("----------Lich su di chuyen cua ban----------");
+                System.out.println("Khong co lich su di chuyen");
+            }else{
+                String[] listHistory = receiveMessage.split("_");
+                for(int i =0; i < (str_lent+1); i+=2){
+                    locationAndTime index = new locationAndTime();
+                    index.setLocation(listHistory[i]);
+                    index.setTime(listHistory[i+1]);
+                    locationAndTimeList.add(index);
+                }
+                System.out.println("----------Lich su di chuyen cua ban----------");
+                System.out.println("Location"+"\t\t\t\t\t\t\t"+"Time");
+                for (int i = 0; i < locationAndTimeList.size(); i++){
+                    System.out.print(locationAndTimeList.get(i).getLocation()+"\t\t\t\t\t"+locationAndTimeList.get(i).getTime());
+                    System.out.println("");
+                }
+                locationAndTimeList.clear();
+            }
+
+    }
+
+    private void getMessageFromServer(BufferedReader receiveRead, Socket socket, account user) throws IOException {
+        String receiveMessage;
+        receiveMessage = String.valueOf(receiveRead.readLine());
+        receiveMessage = removeNonAscii(receiveMessage);
+        receiveMessage = replaceUnreadable(receiveMessage);
+        if(!Objects.equals(receiveMessage, "0")) //receive from server
+        {
+            System.out.print("from server: ");
+            System.out.println(receiveMessage); // displaying at DOS prompt
+        }
+        menuHomePage(receiveRead,socket,user);
+    }
+    
 
     private void showYourInformation(account user){
         showInfor(user);

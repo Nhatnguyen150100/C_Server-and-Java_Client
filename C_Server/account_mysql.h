@@ -7,6 +7,7 @@
 #include<stdbool.h>
 #include <mysql/mysql.h>
 #include "user.h"
+#include "locationAndTime.h"
 
 #define MAX_IDENT_LEN_NAME 100
 #define MAX_IDENT_LEN_PASSWORD 30
@@ -18,10 +19,12 @@ typedef struct {
 
 // Account* makeAccount(char* nameAccount, char* passwordAccount);
 char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
+LocationAndTime* getHistory(User* user, MYSQL *con, MYSQL_RES *result);
 int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, MYSQL_RES *result);
 bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
+bool insertLocationAndTime(LocationAndTime *locationAndTime, User *user, int codeLocation,MYSQL *con, MYSQL_RES *result);
 void finish_with_error(MYSQL *con);
 char* removeEnterCharacter(char* str);
 char* removeEnterCharacterFromString(char* str);
@@ -50,10 +53,44 @@ char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result
     }
 }
 
+LocationAndTime* getHistory(User* user, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    char messageHistory[1000] = "";
+    sprintf(query,"SELECT locationName,time from mydb.location,mydb.check where mydb.location.idlocation = mydb.check.idlocation and idaccount = %s", user->idUser);
+    if (mysql_query(con, query)){
+      finish_with_error(con);
+    }
+    result = mysql_store_result(con);
+    if (result == NULL){
+      finish_with_error(con);
+    }
+
+    int num_fields = mysql_num_fields(result);
+
+    MYSQL_ROW row;
+
+    while ((row = mysql_fetch_row(result))){
+      for(int i = 0; i < num_fields; i++){
+          if(row[i]!=NULL){
+            strcat(messageHistory,row[i]);
+            printf("%s ", row[i] ? row[i] : "NULL");
+            strcat(messageHistory,"_");
+          }
+      }
+      printf("\n");
+    }
+    sprintf(messageHistory,"%s",removeEnterCharacter(messageHistory));
+    // printf("%s\n", messageHistory);
+    LocationAndTime* locationAndTime = createLTEmpty();
+    sprintf(locationAndTime->str,"%s",messageHistory);
+    // printf("------------%s\n",locationAndTime->str);
+    return locationAndTime;
+}
+
 void addInforUser(User *user,char* idaccount, MYSQL *con, MYSQL_RES *result){
     char query[1000];
     sprintf(query,"SELECT * FROM infor WHERE idUser = %s",idaccount);
-    printf("query: %s\n", query);
+    // printf("query: %s\n", query);
     if (mysql_query(con, query)){
       finish_with_error(con);
     }
@@ -93,7 +130,6 @@ void addInforUser(User *user,char* idaccount, MYSQL *con, MYSQL_RES *result){
 
 int indexOfRowAcount(MYSQL *con, MYSQL_RES *result){
     char *index;
-    char inValue[0];
     if (mysql_query(con, "SELECT MAX(idaccount) FROM account")){
       finish_with_error(con);
     }
@@ -135,6 +171,40 @@ bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
     }
 }
 
+int getLocation(char codeLocation[45],MYSQL *con, MYSQL_RES *result){
+    char *index;
+    char query[1000];
+    sprintf(query,"SELECT idLocation FROM location where qrCode = \'%s\'",codeLocation);
+    if(mysql_query(con, query)){
+        finish_with_error(con);
+        return -1;
+    }
+    result = mysql_store_result(con);
+    if (result == NULL){
+      finish_with_error(con);
+    }
+
+    int num_fields = mysql_num_fields(result);
+    MYSQL_ROW row;
+    row = mysql_fetch_row(result);
+    index = row[0];
+    int value = atoi(index);
+    return value;
+}
+
+bool insertLocationAndTime(LocationAndTime *locationAndTime, User *user, int codeLocation,MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"INSERT INTO mydb.check VALUES(%d,%s,\'%s\')", codeLocation, user->idUser, locationAndTime->time);
+    printf("qery insert time and location: %s\n", query);
+    if (mysql_query(con, query)){
+        printf("INSERT LOCATION AND TIME ERROR!\n");
+      finish_with_error(con);
+      return false;
+    }else{
+        return true;
+    }
+}
+
 bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
     char query[1000];
     sprintf(query,"UPDATE infor set firstName = \'%s\', lastName = \'%s\', cardId = \'%s\', birthOfDay = \'%s\', gender = \'%s\', numberPhone = \'%s\', email = \'%s\', address = \'%s\', state = \'%s\' where idUser = %s", user->firstName,user->lastName,user->cardId,user->birthday,user->gender,user->numberPhone,user->address,user->email,user->state, user->idUser);
@@ -142,7 +212,7 @@ bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
         printf("Update INFORMATION ERROR!\n");
       finish_with_error(con);
         return false;
-    }else{
+    }else{ 
         return true;
     }
 }

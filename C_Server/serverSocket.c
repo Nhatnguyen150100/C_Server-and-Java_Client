@@ -11,13 +11,17 @@
 #include <mysql/mysql.h>
 #include "account_mysql.h"
 #include "user.h"
+#include "locationAndTime.h"
 
 #define PORT 9999
 
 void *connection_handler(void *);
 bool upToString(char* client_message,char* server_message);
 void finish_with_error(MYSQL *con);
+
 User* addUser(char inforUserMessage[5000]);
+LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]);
+
 char* createInfor(User* user, char* str, char inforUserMessage[5000]);
 void createInforBirthDay(User* user, char* str, char inforUserMessage[5000]);
 
@@ -139,8 +143,13 @@ void *connection_handler(void *newSocket){
                 write(socket, server_send_message, sizeof(server_send_message));
                 bzero(server_send_message,sizeof(server_send_message));
                 User *user = createUserEmpty(); 
+                addInforUser(user,idaccount,con,result);
                 char inforUserToClient[1000];
                 char inforUserFromClientUpdate[1000];
+                char messageTimeFromClient[1000];
+                char messageHistory[1000] = "";
+                LocationAndTime *locationAndTimeHistory = createLTEmpty();
+                int reader_len_timeFromClient;
                 int reader_len_inforUpdate;
                 int checkLogOut = 0;
                 int setTime = 0;
@@ -159,20 +168,54 @@ void *connection_handler(void *newSocket){
                                 bzero(inforUserToClient,sizeof(inforUserToClient));                
                                 break;
                             case 2:
+                                reader_len_timeFromClient = recv(socket,messageTimeFromClient,1000,0);
+                                if(reader_len_timeFromClient>0){
+                                    sprintf(messageTimeFromClient,"%s",removeEnterCharacterFromString(messageTimeFromClient));
+                                    LocationAndTime *locationAndTime = addLocationAndTine(messageTimeFromClient);
+                                    int codeLocation = getLocation(locationAndTime->location,con,result);
+                                    bool checkTime = insertLocationAndTime(locationAndTime, user,codeLocation,con,result);
+                                    if(checkTime){
+                                        printf("INSERT LOCATION AND TIME SUCCESSFUL\n");
+                                        char sendSuccessfulMessageTime[100] = "Khai bao thanh cong!\n";
+                                        write(socket,sendSuccessfulMessageTime,sizeof(sendSuccessfulMessageTime));
+                                        printf("Gui thanh cong: %s\n",sendSuccessfulMessageTime);
+                                        bzero(sendSuccessfulMessageTime,sizeof(sendSuccessfulMessageTime));
+                                    }else{
+                                        printf("INSERT LOCATION AND TIME ERROR\n");
+                                    }
+                                }else{
+                                    char sendErrorMessageTime[100] = "Can't read time and location!\n";
+                                    write(socket,sendErrorMessageTime,sizeof(sendErrorMessageTime));
+                                    bzero(sendErrorMessageTime,sizeof(sendErrorMessageTime));
+                                }
                                 break;
                             case 3:
+                                locationAndTimeHistory = getHistory(user,con,result);
+                                sprintf(messageHistory,"%s",locationAndTimeHistory->str);
+                                // printf("%s",messageHistory);
+                                if(messageHistory!=(NULL)){
+                                    strcat(messageHistory,"\n");                                
+                                    // printf("chuoi history: %s\n",messageHistory);
+                                    write(socket,messageHistory,sizeof(messageHistory));
+                                    bzero(messageHistory,sizeof(messageHistory));
+                                }else{
+                                    char messageNULL[100] = "Hien tai khong co lich trinh di chuyen\n";
+                                    write(socket,messageNULL,sizeof(messageNULL));
+                                    bzero(messageNULL,sizeof(messageNULL));
+                                }
                                 break;
                             case 4:
                                 reader_len_inforUpdate = recv(socket,inforUserFromClientUpdate,1000,0);
                                 if(reader_len_inforUpdate>0){
                                     sprintf(inforUserFromClientUpdate,"%s",removeEnterCharacterFromString(inforUserFromClientUpdate));
                                     // printf("chuoi nhan: %s\n", inforUserMessage);
-                                    User *user = addUser(inforUserFromClientUpdate);
-                                    bool checkUpdateInfor = updateInforAccount(user,con,result);
+                                    User *user_index = addUser(inforUserFromClientUpdate);
+                                    bool checkUpdateInfor = updateInforAccount(user_index,con,result);
                                     if(checkUpdateInfor==true){
                                         char inforUpdateSuccessMessage[1000] = "Update your information successfully\n";
                                         write(socket,inforUpdateSuccessMessage, sizeof(inforUpdateSuccessMessage));
                                         bzero(inforUpdateSuccessMessage,sizeof(inforUpdateSuccessMessage));
+                                        free(user_index);
                                     }  
                                 }else{
                                     char sendErrorMessageUpdate[100] = "Can't read your update information!\n";
@@ -193,6 +236,7 @@ void *connection_handler(void *newSocket){
 
                 if(checkLogOut == 1){
                     bzero(account_message,sizeof(account_message));
+                    free(user);
                     printf("CheckLogOut: %d\n", checkLogOut);
                     continue;
                 }
@@ -280,4 +324,23 @@ User* addUser(char inforUserMessage[5000]){
     }
     return user;
 }
+
+
+LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]){
+    int i = 0;
+    LocationAndTime *locationAndTime = createLTEmpty();
+    char* token = strtok(inforLocationandTime,"_");
+    while(token != NULL){
+        if(i==0){
+            sprintf(locationAndTime->location,"%s",token);
+        }else if(i==1){
+            sprintf(locationAndTime->time,"%s",token);
+        }
+        // printf("%s\n", token);
+        token = strtok(NULL, "_");
+        i++;
+    }
+    return locationAndTime;
+}
+
 
