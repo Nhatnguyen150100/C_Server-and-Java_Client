@@ -21,6 +21,7 @@ char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result
 int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, MYSQL_RES *result);
 bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
+bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 void finish_with_error(MYSQL *con);
 char* removeEnterCharacter(char* str);
 char* removeEnterCharacterFromString(char* str);
@@ -128,6 +129,19 @@ bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
     if (mysql_query(con, query)){
         printf("INSERT INFORMATION ERROR!\n");
       finish_with_error(con);
+      return false;
+    }else{
+        return true;
+    }
+}
+
+bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"UPDATE infor set firstName = \'%s\', lastName = \'%s\', cardId = \'%s\', birthOfDay = \'%s\', gender = \'%s\', numberPhone = \'%s\', email = \'%s\', address = \'%s\', state = \'%s\' where idUser = %s", user->firstName,user->lastName,user->cardId,user->birthday,user->gender,user->numberPhone,user->address,user->email,user->state, user->idUser);
+    if (mysql_query(con, query)){
+        printf("Update INFORMATION ERROR!\n");
+      finish_with_error(con);
+        return false;
     }else{
         return true;
     }
@@ -138,7 +152,6 @@ void finish_with_error(MYSQL *con)
 {
   fprintf(stderr, "%s\n", mysql_error(con));
   mysql_close(con);
-  exit(1);
 }
 
 char* removeEnterCharacter(char* str){

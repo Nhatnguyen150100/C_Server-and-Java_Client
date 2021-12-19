@@ -140,11 +140,8 @@ void *connection_handler(void *newSocket){
                 bzero(server_send_message,sizeof(server_send_message));
                 User *user = createUserEmpty(); 
                 char inforUserToClient[1000];
-                addInforUser(user,idaccount,con,result);
-                sprintf(inforUserToClient,"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s\n", user->idUser, user->firstName, user->lastName, user->cardId, user->birthday, user->gender, user->numberPhone, user->address, user->email, user->state);
-                write(socket,inforUserToClient,sizeof(inforUserToClient));
-                printf("gui thanh cong %s", inforUserToClient);
-                bzero(inforUserToClient,sizeof(inforUserToClient));
+                char inforUserFromClientUpdate[1000];
+                int reader_len_inforUpdate;
                 int checkLogOut = 0;
                 int setTime = 0;
                 while (checkLogOut==0){
@@ -154,13 +151,34 @@ void *connection_handler(void *newSocket){
                     if(choiceMenuClient > 0){
                         int choice = atoi(choiceClientMessage);
                         switch(choice){
-                            case 1:                
+                            case 1:
+                                addInforUser(user,idaccount,con,result);
+                                sprintf(inforUserToClient,"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s\n", user->idUser, user->firstName, user->lastName, user->cardId, user->birthday, user->gender, user->numberPhone, user->address, user->email, user->state);
+                                write(socket,inforUserToClient,sizeof(inforUserToClient));
+                                printf("gui thanh cong %s", inforUserToClient);
+                                bzero(inforUserToClient,sizeof(inforUserToClient));                
                                 break;
                             case 2:
                                 break;
                             case 3:
                                 break;
                             case 4:
+                                reader_len_inforUpdate = recv(socket,inforUserFromClientUpdate,1000,0);
+                                if(reader_len_inforUpdate>0){
+                                    sprintf(inforUserFromClientUpdate,"%s",removeEnterCharacterFromString(inforUserFromClientUpdate));
+                                    // printf("chuoi nhan: %s\n", inforUserMessage);
+                                    User *user = addUser(inforUserFromClientUpdate);
+                                    bool checkUpdateInfor = updateInforAccount(user,con,result);
+                                    if(checkUpdateInfor==true){
+                                        char inforUpdateSuccessMessage[1000] = "Update your information successfully\n";
+                                        write(socket,inforUpdateSuccessMessage, sizeof(inforUpdateSuccessMessage));
+                                        bzero(inforUpdateSuccessMessage,sizeof(inforUpdateSuccessMessage));
+                                    }  
+                                }else{
+                                    char sendErrorMessageUpdate[100] = "Can't read your update information!\n";
+                                    write(socket,sendErrorMessageUpdate,sizeof(sendErrorMessageUpdate));
+                                    bzero(sendErrorMessageUpdate,sizeof(sendErrorMessageUpdate));
+                                }
                                 break;
                             case 5:
                                 checkLogOut = 1;
@@ -168,12 +186,13 @@ void *connection_handler(void *newSocket){
                         }
                         bzero(choiceClientMessage,sizeof(choiceClientMessage));
                     }
-                    if(setTime > 1000){
+                    if(setTime > 10000){
                         break;
                     }
                 }
 
                 if(checkLogOut == 1){
+                    bzero(account_message,sizeof(account_message));
                     printf("CheckLogOut: %d\n", checkLogOut);
                     continue;
                 }

@@ -1,5 +1,5 @@
 import inforUser.account;
-
+import java.time.LocalDateTime; // import the LocalDateTime class
 import java.io.*;
 import java.net.*;
 import java.util.Objects;
@@ -101,43 +101,59 @@ class ClientJava {
     private void homePage(BufferedReader receiveRead,Socket socket, account user) throws IOException {
 //        InputStream istream = socket.getInputStream();
 //        BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream), 1024);
-        String receiveMessage2 = "";
-        receiveMessage2 = String.valueOf(receiveRead.readLine());
-        receiveMessage2 = removeNonAscii(receiveMessage2);
-        receiveMessage2 = replaceUnreadable(receiveMessage2);
-        if(!Objects.equals(receiveMessage2, "0")){
-            inputTheUser(receiveMessage2, user);
-            System.out.println(receiveMessage2);
-        }else if(receiveMessage2.equals("")){
-            System.out.println("Can't read your information!");
-        }
-        menuHomePage(socket, user);
+        menuHomePage(receiveRead,socket, user);
     }
 
-    private void menuHomePage(Socket socket, account user) throws IOException {
+    private void menuHomePage(BufferedReader receiveRead,Socket socket, account user) throws IOException {
         int choice;
         Scanner scanner = new Scanner(System.in);
         System.out.println("-----------------------PC COVID-----------------------");
         System.out.println("1: Xem thong tin ca nhan cua ban");
         System.out.println("2: Khai bao y te");
-        System.out.println("3: Quet QR");
+        System.out.println("3: Lich su di chuyen");
         System.out.println("4: Chinh sua thong tin ca nhan");
         System.out.println("5: Exit");
         System.out.print("Your choice: ");
         choice = scanner.nextInt();
         switch (choice){
             case 1 ->{
+                sendAccountMessage(String.valueOf(choice),socket);
+                String receiveMessage2 = "";
+                receiveMessage2 = String.valueOf(receiveRead.readLine());
+                receiveMessage2 = removeNonAscii(receiveMessage2);
+                receiveMessage2 = replaceUnreadable(receiveMessage2);
+                if(!Objects.equals(receiveMessage2, "0")){
+                    inputTheUser(receiveMessage2, user);
+                }else if(receiveMessage2.equals("")){
+                    System.out.println("Can't read your information!");
+                }
                 showYourInformation(user);
-                menuHomePage(socket,user);
+                menuHomePage(receiveRead,socket,user);
             }
             case 2 ->{
-                System.out.println("Error: unachievable");
+                sendAccountMessage(String.valueOf(choice),socket);
+                System.out.println("Nhap ma dia diem:");
+                String codeOfLocation = sendAccount();
+                //TODO
+
             }
             case 3 ->{
                 System.out.println("Error: unachievable3");
             }
             case 4 ->{
-                System.out.println("Error: unachievable2");
+                sendAccountMessage(String.valueOf(choice),socket);
+                String idUser = user.getIdUser();
+                createInforAccount(idUser,socket);
+                String receiveMessage2;
+                receiveMessage2 = String.valueOf(receiveRead.readLine());
+                receiveMessage2 = removeNonAscii(receiveMessage2);
+                receiveMessage2 = replaceUnreadable(receiveMessage2);
+                if(!Objects.equals(receiveMessage2, "0")) //receive from server
+                {
+                    System.out.print("from server: ");
+                    System.out.println(receiveMessage2); // displaying at DOS prompt
+                }
+                menuHomePage(receiveRead,socket,user);
             }
             case 5 ->{
                 sendAccountMessage(String.valueOf(choice),socket);
@@ -166,6 +182,7 @@ class ClientJava {
         System.out.println("Address: "+ user.getAddress());
         System.out.println("State: " + user.getState());
     }
+
 
     private void inputTheUser(String receiveMessage, account user) {
         String[] listInfor = receiveMessage.split("_");
