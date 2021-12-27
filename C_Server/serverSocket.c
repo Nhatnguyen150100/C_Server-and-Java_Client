@@ -19,14 +19,97 @@ void *connection_handler(void *);
 bool upToString(char* client_message,char* server_message);
 void finish_with_error(MYSQL *con);
 
-User* addUser(char inforUserMessage[5000]);
+User* addUser(char inforUserMessage[5000], int idUser);
 LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]);
 
 char* createInfor(User* user, char* str, char inforUserMessage[5000]);
 void createInforBirthDay(User* user, char* str, char inforUserMessage[5000]);
 
+
+void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){
+    listUserF1 = (User*)malloc(500*sizeof(User*));
+    listUserF1 = listIdOfF0(con,result);
+    if(!strcmp(listUserF1[0].idUser,"")){
+            for(int i = 0; i < 500; i++){
+        if(!(strcmp(listUserF1[i].idUser,"")==0)){
+            // printf("idUser F1:%s\n",listUserF1[i].idUser);
+            updateState(listUserF1[i].idUser,con,result);
+        }else{
+            break;
+        }       
+    }
+    }
+}
+
+User* listUserF1;
+
 int main(){
     MYSQL *con = mysql_init(NULL);
+    if (con == NULL){
+      fprintf(stderr, "mysql_init() failed\n");
+      exit(1);
+    }
+
+    if (mysql_real_connect(con, "localhost", "root", "password","mydb", 0, NULL, 0) == NULL){
+        finish_with_error(con);
+    }else{
+	    printf("Mysql connect success!\n");
+    }
+    MYSQL_RES *result = mysql_store_result(con);
+    autoTruyVetF1(listUserF1,con,result);
+    int choice = 0;
+    printf("Thuc hien chuc nang Server chon 1( bo qua chon 0):");
+    scanf("%d", &choice);
+    if(choice == 1){
+        bool check = true;
+        do{
+            printf("------------Menu------------\n");
+            printf("1. Xem thong tin nguoi dung\n");
+            printf("2. Cap nhat trang thai nguoi dung\n");
+            printf("3. Exit\n");
+            int index = 0;
+            printf("Lua chon: ");
+            scanf("%d", &index);
+            switch(index){
+                case 1:
+                    showAllOfInformationsUser(con,result);
+                    break;
+                case 2:
+                    printf("1. F0\n");
+                    printf("2. normal\n");
+                    printf("Lua chon: ");
+                    int choice2;
+                    scanf("%d", &choice2);
+                    int idUser;
+                    printf("Nhap id nguoi dung: ");
+                    scanf("%d", &idUser);
+                    if(choice2==1){
+                        bool checkUpdate = updateStateF0forUser(idUser,con,result);
+                        if(checkUpdate==true){
+                            printf("Update thanh cong\n");
+                            autoTruyVetF1(listUserF1,con,result);
+                        }else{
+                            printf("Update khong thanh cong\n");
+                        }
+                    }else{
+                        bool checkUpdate = updateStateNormalforUser(idUser,con,result);
+                        if(checkUpdate==true){
+                            printf("Update thanh cong\n");
+                            autoTruyVetF1(listUserF1,con,result);
+                        }else{
+                            printf("Update khong thanh cong\n");
+                        }
+                    }
+                    break;
+                case 3:
+                    check = false;
+                    break;
+            }
+        }while(check);       
+    }
+
+
+
     int socketfd, ret;
     struct sockaddr_in serverAddr;
 
@@ -66,8 +149,8 @@ int main(){
 
 
     int no_threads=0;
-    pthread_t threads[3];
-    while (no_threads<3){
+    pthread_t threads[1000];
+    while (no_threads<1000){
         newSocket = accept(socketfd, (struct sockaddr*)&newAddr, &addr_size);
         if( newSocket < 0){
             printf("No socket\n");
@@ -88,12 +171,13 @@ int main(){
     no_threads++;
 	}
     int k=0;
-    for (k=0;k<3;k++){
+    for (k=0;k<1000;k++){
 	    pthread_join(threads[k],NULL);
 	}
     close(socketfd);
     printf("close server: %d\n", no_threads);
     mysql_close(con);
+    free(listUserF1);
     return 0;
 }
 
@@ -113,7 +197,6 @@ void *connection_handler(void *newSocket){
     int socket = *(int*) newSocket;
 	int read_len, reader;
 	char server_message[100]="Hello from server\n";
-	char server_message_wrong[100] = "Logic error - Invalid UserName or Password\n";
 	int send_status;
     // send_status=send(socket, server_message, sizeof(server_message), 0);
 	char client_message[1];
@@ -127,7 +210,10 @@ void *connection_handler(void *newSocket){
 		client_message[read_len-1] = '\0';
 		printf("Chuoi string nhan la: %s\n",client_message);
         reader = recv(socket,account_message,1024,0);
-        // printf("query: %s", account_message);
+        printf("query: %s", account_message);
+        if(strcmp(account_message,"")==0){
+            continue;
+        }
         accountName = strtok(account_message,"_");
         printf("Name: %s\n", accountName);
         accountName = strtok(NULL,"_");
@@ -145,6 +231,10 @@ void *connection_handler(void *newSocket){
                 User *user = createUserEmpty(); 
                 addInforUser(user,idaccount,con,result);
                 char inforUserToClient[1000];
+                sprintf(inforUserToClient,"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s\n", user->idUser, user->firstName, user->lastName, user->cardId, user->birthday, user->gender, user->numberPhone, user->address, user->email, user->state);
+                write(socket,inforUserToClient,sizeof(inforUserToClient));
+                printf("gui thanh cong first %s", inforUserToClient);
+                bzero(inforUserToClient,sizeof(inforUserToClient)); 
                 char inforUserFromClientUpdate[1000];
                 char messageTimeFromClient[1000];
                 char messageHistory[1000] = "";
@@ -209,7 +299,8 @@ void *connection_handler(void *newSocket){
                                 if(reader_len_inforUpdate>0){
                                     sprintf(inforUserFromClientUpdate,"%s",removeEnterCharacterFromString(inforUserFromClientUpdate));
                                     // printf("chuoi nhan: %s\n", inforUserMessage);
-                                    User *user_index = addUser(inforUserFromClientUpdate);
+                                    int idUser_index = atoi(user->idUser);
+                                    User *user_index = addUser(inforUserFromClientUpdate,idUser_index);
                                     bool checkUpdateInfor = updateInforAccount(user_index,con,result);
                                     if(checkUpdateInfor==true){
                                         char inforUpdateSuccessMessage[1000] = "Update your information successfully\n";
@@ -224,6 +315,22 @@ void *connection_handler(void *newSocket){
                                 }
                                 break;
                             case 5:
+                                checkLogOut = 1;
+                                break;
+                            case 6:
+                                if(strcmp(user->state,"F1")==0){
+                                    char waringMessage[300] = "Hien tai ban dang la F1 do co lich trinh di chuyen trung voi F0. XIN HAY TU CACH LY VA THONG BAO DEN CO SO Y TE GAN NHAT. TRAN TRONG!\n";
+                                    write(socket,waringMessage, sizeof(waringMessage));
+                                    printf("gui thanh cong 2: %s\n", waringMessage);
+                                    bzero(waringMessage,sizeof(waringMessage));
+                                }else{
+                                    char waringMessage[300] = "Khong co thong bao\n";
+                                    write(socket,waringMessage, sizeof(waringMessage));
+                                    printf("gui thanh cong 2: %s\n", waringMessage);
+                                    bzero(waringMessage,sizeof(waringMessage));
+                                }
+                                break;
+                            default:
                                 checkLogOut = 1;
                                 break;
                         }
@@ -243,6 +350,7 @@ void *connection_handler(void *newSocket){
 
                 // send_status=send(socket , server_send_message , strlen(server_send_message),0);
             }else{
+                char server_message_wrong[100] = "Login error - Invalid UserName or Password\n";
                 write(socket, server_message_wrong, sizeof(server_message_wrong));
                 bzero(server_message_wrong,sizeof(server_message_wrong));
                 // send_status=send(socket , server_message_wrong , strlen(server_message_wrong),0);
@@ -260,22 +368,23 @@ void *connection_handler(void *newSocket){
                 int idUser = createNewAccount(accountName,accountPassword,con,result);
                 char accountSuccessMessage[1000] = "Create a account successfully: Please enter personal information\n";
                 printf("Insert account ok\n");
-                char idser[10];
-                sprintf(idser, "%d\n",idUser);
+                // char idser[10];
+                // sprintf(idser, "%d\n",idUser);
                 write(socket, accountSuccessMessage, sizeof(accountSuccessMessage));
-                write(socket, idser, sizeof(idser));
+                // write(socket, idser, sizeof(idser));
                 bzero(accountSuccessMessage,sizeof(accountSuccessMessage));
-                bzero(idser,sizeof(idser));
+                // bzero(idser,sizeof(idser));
                 char inforUserMessage[5000];
                 int reader_len = recv(socket, inforUserMessage, sizeof(inforUserMessage),0);
                 if(reader_len < 0){
                     char errorMessage[100] = "Can't receive your infor user message";
                     write(socket,errorMessage, sizeof(errorMessage));
                     bzero(errorMessage,sizeof(errorMessage));
+                    continue;
                 }else{
                     sprintf(inforUserMessage,"%s",removeEnterCharacterFromString(inforUserMessage));
-                    // printf("chuoi nhan: %s\n", inforUserMessage);
-                    User *user = addUser(inforUserMessage);
+                    printf("chuoi nhan: %s\n", inforUserMessage);
+                    User *user = addUser(inforUserMessage, idUser);
                     bool checkInsertInfor = insertInforAccount(user,con,result);
                     if(checkInsertInfor==true){
                         char inforSuccessMessage[1000] = "Create information successfully -> Let login to PC COVID\n";
@@ -292,13 +401,14 @@ void *connection_handler(void *newSocket){
 }
 
 
-User* addUser(char inforUserMessage[5000]){
+User* addUser(char inforUserMessage[5000], int idUser){
     int i = 0;
     User *user = createUserEmpty();
+    sprintf(user->idUser,"%d",idUser);
     char* token = strtok(inforUserMessage,"_");
     while(token != NULL){
         if(i==0){
-            sprintf(user->idUser,"%s",token);
+            // sprintf(user->idUser,"%s",token);
         }else if(i==1){
             sprintf(user->firstName,"%s",token);
         }else if(i==2){

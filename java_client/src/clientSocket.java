@@ -66,8 +66,10 @@ class ClientJava {
 
 
     private void checkOutPut(BufferedReader receiveRead, Socket socket, account user) throws IOException {
-        String receiveMessage;
+
+        String receiveMessage = "";
         receiveMessage = String.valueOf(receiveRead.readLine());
+        System.out.println("check");
         receiveMessage = removeNonAscii(receiveMessage);
         receiveMessage = replaceUnreadable(receiveMessage);
         if(!Objects.equals(receiveMessage, "0")) //receive from server
@@ -98,6 +100,9 @@ class ClientJava {
                     ClientJava clientJava = new ClientJava();
                     clientJava.menuChoice(socket, user);
                 }
+            }else if(receiveMessage.equals("Login error - Invalid UserName or Password")){
+                receiveMessage = receiveMessage.substring(0,0);
+                menuChoice(socket,user);
             }
         }
     }
