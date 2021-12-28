@@ -123,7 +123,7 @@ User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
                         // printf("location %s\n", listLocation[k].location);
                         // printf("listId: %s\n", listId[i].idUser);
                         char quey3[500];
-                        sprintf(quey3,"select distinct idaccount from mydb.check where time > date_sub(\'%s\', interval 3 day) and idlocation = %s and idaccount != %s ", time, listLocation[k].location, listId[i].idUser);
+                        sprintf(quey3,"select distinct idaccount from mydb.check where time > date_add(\'%s\', interval 1 day) and idlocation = %s and idaccount != %s ", time, listLocation[k].location, listId[i].idUser);
                         if (mysql_query(con, quey3)){
                             printf("check error3");
                             finish_with_error(con);

@@ -323,6 +323,11 @@ void *connection_handler(void *newSocket){
                                     write(socket,waringMessage, sizeof(waringMessage));
                                     printf("gui thanh cong 2: %s\n", waringMessage);
                                     bzero(waringMessage,sizeof(waringMessage));
+                                }else if(strcmp(user->state,"F0")==0){
+                                    char waringMessage[300] = "Hien tai ban dang la F0. YEU CAU KHONG DI CHUYEN KHOI NOI CU TRU VA LIEN HE VOI CO SO Y TE GAN NHAT DE DUOC HUONG DAN. TRAN TRONG!\n";
+                                    write(socket,waringMessage, sizeof(waringMessage));
+                                    printf("gui thanh cong 2: %s\n", waringMessage);
+                                    bzero(waringMessage,sizeof(waringMessage));
                                 }else{
                                     char waringMessage[300] = "Khong co thong bao\n";
                                     write(socket,waringMessage, sizeof(waringMessage));
