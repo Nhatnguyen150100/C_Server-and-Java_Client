@@ -6,11 +6,6 @@
 #include<string.h>
 #include<stdbool.h>
 
-typedef struct{
-    char day[45];
-    char month[45];
-    char year[45];
-}Birthday;
 
 typedef struct{
     char idUser[10];
@@ -42,6 +37,12 @@ typedef struct{
 
 User* createUserEmpty(){
     User*user = (User*) malloc(sizeof(User));
+    return user;
+}
+
+User* createUserF1(){
+    User* user;
+    strcpy(user->idUser,"-1");
     return user;
 }
 

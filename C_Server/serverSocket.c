@@ -26,18 +26,23 @@ char* createInfor(User* user, char* str, char inforUserMessage[5000]);
 void createInforBirthDay(User* user, char* str, char inforUserMessage[5000]);
 
 
-void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){
+void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){  
     listUserF1 = (User*)malloc(500*sizeof(User*));
+    // for(int i = 0; i < 500; i++){
+    //     strcpy(listUserF1[i].idUser,"-1");         
+    // }
     listUserF1 = listIdOfF0(con,result);
-    if(!strcmp(listUserF1[0].idUser,"")){
+    if(!strcmp(listUserF1[0].idUser,"")==0){
             for(int i = 0; i < 500; i++){
-        if(!(strcmp(listUserF1[i].idUser,"")==0)){
-            // printf("idUser F1:%s\n",listUserF1[i].idUser);
-            updateState(listUserF1[i].idUser,con,result);
-        }else{
-            break;
-        }       
-    }
+                if(!(strcmp(listUserF1[i].idUser,"")==0)&& strlen(listUserF1[i].idUser)<5){      
+                    if(!(strcmp(listUserF1[i].idUser,"-1")==0)){
+                        // printf("idUser F1:%s\n",listUserF1[i].idUser);
+                        updateState(listUserF1[i].idUser,con,result);
+                    }                                            
+                }else{
+                    break;
+                }       
+            }
     }
 }
 
@@ -209,19 +214,19 @@ void *connection_handler(void *newSocket){
 	{
 		client_message[read_len-1] = '\0';
 		printf("Chuoi string nhan la: %s\n",client_message);
-        reader = recv(socket,account_message,1024,0);
-        printf("query: %s", account_message);
-        if(strcmp(account_message,"")==0){
-            continue;
-        }
-        accountName = strtok(account_message,"_");
-        printf("Name: %s\n", accountName);
-        accountName = strtok(NULL,"_");
-        accountPassword = strtok(accountName,"_");
-        accountPassword = removeEnterCharacterFromString(accountPassword);
-        printf("password:%s\n", accountPassword);
-        accountName = strtok(account_message,"_");
-        if(strcmp(client_message,"1") == 0){
+        if(strcmp(client_message,"login") == 0){
+            reader = recv(socket,account_message,1024,0);
+            printf("query: %s", account_message);
+            if(strcmp(account_message,"")==0){
+                continue;
+            }
+            accountName = strtok(account_message,"_");
+            printf("Name: %s\n", accountName);
+            accountName = strtok(NULL,"_");
+            accountPassword = strtok(accountName,"_");
+            accountPassword = removeEnterCharacterFromString(accountPassword);
+            printf("password:%s\n", accountPassword);
+            accountName = strtok(account_message,"_");
             bzero(client_message,sizeof(client_message));
             char* idaccount = checkNameAccount(accountName,accountPassword,con,result);
             if(strcmp(idaccount,"false") != 0){
@@ -232,8 +237,8 @@ void *connection_handler(void *newSocket){
                 addInforUser(user,idaccount,con,result);
                 char inforUserToClient[1000];
                 sprintf(inforUserToClient,"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s\n", user->idUser, user->firstName, user->lastName, user->cardId, user->birthday, user->gender, user->numberPhone, user->address, user->email, user->state);
-                write(socket,inforUserToClient,sizeof(inforUserToClient));
-                printf("gui thanh cong first %s", inforUserToClient);
+                int check = write(socket,inforUserToClient,sizeof(inforUserToClient));
+                printf("gui thanh cong first %d\n", check);
                 bzero(inforUserToClient,sizeof(inforUserToClient)); 
                 char inforUserFromClientUpdate[1000];
                 char messageTimeFromClient[1000];
@@ -361,6 +366,18 @@ void *connection_handler(void *newSocket){
                 // send_status=send(socket , server_message_wrong , strlen(server_message_wrong),0);
             }
         }else{
+            reader = recv(socket,account_message,1024,0);
+            printf("query: %s", account_message);
+            if(strcmp(account_message,"")==0){
+                continue;
+            }
+            accountName = strtok(account_message,"_");
+            printf("Name: %s\n", accountName);
+            accountName = strtok(NULL,"_");
+            accountPassword = strtok(accountName,"_");
+            accountPassword = removeEnterCharacterFromString(accountPassword);
+            printf("password:%s\n", accountPassword);
+            accountName = strtok(account_message,"_");
             bzero(client_message,sizeof(client_message));
             char* idaccount = checkNameAccount(accountName,accountPassword,con,result);
             if(strcmp(idaccount,"false") != 0){

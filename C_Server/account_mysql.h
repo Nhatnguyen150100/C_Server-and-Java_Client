@@ -50,8 +50,9 @@ bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result){
 
 
 User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
+    int indexOfListF0 = 0;
     User* listId;
-    User* listF1;
+    User* listF1 ;
     listId = (User*)malloc(10*sizeof(User*));
     listF1 = (User*)malloc(500*sizeof(User*));
     if (mysql_query(con, "SELECT idUser FROM infor where state = 'F0'")){
@@ -68,15 +69,21 @@ User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
     MYSQL_ROW row;
     while ((row = mysql_fetch_row(result))){
         for(int i = 0; i < num_fields; i++){
-            sprintf(listId[i].idUser,"%s",row[i]);
+            // printf("i: %d\n", i);
+            sprintf(listId[indexOfListF0].idUser,"%s",row[i]);
+            indexOfListF0++;
+            strcpy(listId[indexOfListF0].idUser,"");
             printf("F0:%s ", row[i] ? row[i] : "NULL");
         }
         printf("\n");
     }
-    if(!strcmp(listId[0].idUser,"")==0){
+    if(!strcmp(listId[0].idUser,"")==0){               
         int indexOfListF1 = 0;
-        for(int i = 0; i < 10; i++){
-            if(listId[i].idUser != NULL){
+        for(int i = 0; i < 20; i++){
+            // printf("i : %d", i);
+
+            if(!strcmp(listId[i].idUser,"")==0){
+                // printf("id: %s\n", listId[i].idUser);
                 LocationAndTime* listLocation;
                 listLocation = (LocationAndTime*)malloc(500*sizeof(LocationAndTime));
                 char query[200];
@@ -95,7 +102,7 @@ User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
                 int indexListLocation = 0;
                 while ((row1 = mysql_fetch_row(result))){                
                     for(int j = 0; j < num_fields; j++){
-                        printf("idlocation: %s\n", row1[j]);
+                        // printf("idlocation: %s\n", row1[j]);
                         sprintf(listLocation[indexListLocation].location,"%s",row1[j]);
 
                     }
@@ -140,7 +147,7 @@ User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
                                 sprintf(listF1[indexOfListF1].idUser,"%s",row3[h]);
                                 // printf("F1: %s\n", listF1[indexOfListF1].idUser);
                                 indexOfListF1++;
-                                strcpy(listF1[indexOfListF1].idUser,"");
+                                // strcpy(listF1[indexOfListF1].idUser,"");
                             }
                         }
                         bzero(time,sizeof(time));
@@ -158,13 +165,24 @@ User* listIdOfF0(MYSQL *con, MYSQL_RES *result){
         indexOfListF1 = 0;
     }
     
-    // for(int i = 0; i < 500; i++){
-    //     if(!(strcmp(listF1[i].idUser,"")==0)){
-    //         printf("idUser:%s\t",listF1[i].idUser);
-    //     }else{
-    //         break;
-    //     }       
-    // }
+    for(int i = 0; i < 500; i++){
+        if(!(strcmp(listF1[i].idUser,"")==0)){
+            for(int j = 0; j < indexOfListF0; j++){
+                if(strcmp(listId[j].idUser,listF1[i].idUser)==0){
+                    sprintf(listF1[i].idUser,"%s","-1");
+                }
+            }
+        }else{
+            break;
+        }       
+    }
+            // for(int i = 0; i < 500; i++){
+            //     if(!(strcmp(listF1[i].idUser,"")==0) && strlen(listF1[i].idUser)<5){           
+            //         // printf("idUser F1:%s\n",listF1[i].idUser);                    
+            //     }else{
+            //         break;
+            //     }       
+            // }
     free(listId);
     return listF1;
 }
@@ -202,10 +220,10 @@ void showAllOfInformationsUser(MYSQL *con, MYSQL_RES *result){
         }else if(i==7){
             printf("%-27s\t", row[i] ? row[i] : "NULL");
         }else if(i==8){
-            printf("%-45s\t", row[i] ? row[i] : "NULL");
+            printf("%-30s\t", row[i] ? row[i] : "NULL");
         }
         else{
-            printf("%s\t", row[i] ? row[i] : "NULL");
+            printf("%-5s\t", row[i] ? row[i] : "NULL");
         }         
       }
       printf("\n");
@@ -237,7 +255,7 @@ bool updateStateNormalforUser(int idUser ,MYSQL *con, MYSQL_RES *result){
 char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
     char query[1000];
     sprintf(query,"SELECT idaccount FROM account where userName = \'%s\'", name);
-    printf("Query check account:%s\n", query);
+    // printf("Query check account:%s\n", query);
     if (mysql_query(con, query)){
       finish_with_error(con);
     }
