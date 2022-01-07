@@ -14,37 +14,24 @@
 #include "locationAndTime.h"
 
 #define PORT 9999
+#define HOST_MYSQL "localhost"
+#define USER_MYSQL "root"
+#define PASSWORD_MYSQL "password"
+#define DB_MYSQL "mydb"
 
 void *connection_handler(void *);
-bool upToString(char* client_message,char* server_message);
+void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result);
 void finish_with_error(MYSQL *con);
-
-User* addUser(char inforUserMessage[5000], int idUser);
-LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]);
 
 char* createInfor(User* user, char* str, char inforUserMessage[5000]);
 void createInforBirthDay(User* user, char* str, char inforUserMessage[5000]);
 
+bool upToString(char* client_message,char* server_message);
 
-void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){  
-    listUserF1 = (User*)malloc(500*sizeof(User*));
-    // for(int i = 0; i < 500; i++){
-    //     strcpy(listUserF1[i].idUser,"-1");         
-    // }
-    listUserF1 = listIdOfF0(con,result);
-    if(!strcmp(listUserF1[0].idUser,"")==0){
-            for(int i = 0; i < 500; i++){
-                if(!(strcmp(listUserF1[i].idUser,"")==0)&& strlen(listUserF1[i].idUser)<5){      
-                    if(!(strcmp(listUserF1[i].idUser,"-1")==0)){
-                        // printf("idUser F1:%s\n",listUserF1[i].idUser);
-                        updateState(listUserF1[i].idUser,con,result);
-                    }                                            
-                }else{
-                    break;
-                }       
-            }
-    }
-}
+User* addUser(char inforUserMessage[5000], int idUser);
+Account* addAccount(char acccount_message[5000]);
+LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]);
+
 
 User* listUserF1;
 
@@ -55,7 +42,7 @@ int main(){
       exit(1);
     }
 
-    if (mysql_real_connect(con, "localhost", "root", "password","mydb", 0, NULL, 0) == NULL){
+    if (mysql_real_connect(con, HOST_MYSQL, USER_MYSQL, PASSWORD_MYSQL,DB_MYSQL, 0, NULL, 0) == NULL){
         finish_with_error(con);
     }else{
 	    printf("Mysql connect success!\n");
@@ -193,7 +180,7 @@ void *connection_handler(void *newSocket){
       exit(1);
     }
 
-    if (mysql_real_connect(con, "localhost", "root", "password","mydb", 0, NULL, 0) == NULL){
+    if (mysql_real_connect(con, HOST_MYSQL, USER_MYSQL, PASSWORD_MYSQL,DB_MYSQL, 0, NULL, 0) == NULL){
         finish_with_error(con);
     }else{
 	    printf("Mysql connect success!\n");
@@ -216,7 +203,7 @@ void *connection_handler(void *newSocket){
 		printf("Chuoi string nhan la: %s\n",client_message);
         if(strcmp(client_message,"login") == 0){
             reader = recv(socket,account_message,1024,0);
-            printf("query: %s", account_message);
+            // printf("query: %s", account_message);
             if(strcmp(account_message,"")==0){
                 continue;
             }
@@ -239,7 +226,8 @@ void *connection_handler(void *newSocket){
                 sprintf(inforUserToClient,"%s_%s_%s_%s_%s_%s_%s_%s_%s_%s\n", user->idUser, user->firstName, user->lastName, user->cardId, user->birthday, user->gender, user->numberPhone, user->address, user->email, user->state);
                 int check = write(socket,inforUserToClient,sizeof(inforUserToClient));
                 printf("gui thanh cong first %d\n", check);
-                bzero(inforUserToClient,sizeof(inforUserToClient)); 
+                bzero(inforUserToClient,sizeof(inforUserToClient));
+                char* stringLocation; 
                 char inforUserFromClientUpdate[1000];
                 char messageTimeFromClient[1000];
                 char messageHistory[1000] = "";
@@ -340,6 +328,17 @@ void *connection_handler(void *newSocket){
                                     bzero(waringMessage,sizeof(waringMessage));
                                 }
                                 break;
+                            case 7:
+                                printf("vao 7\n");
+                                stringLocation = getLocationOfF0(con,result);
+                                printf("stringLocation: %s\n",stringLocation);
+                                if(!strcmp(stringLocation,"")==0){
+                                    write(socket,stringLocation, sizeof(stringLocation));
+                                    printf("gui thanh cong location: %s\n", stringLocation);
+                                    bzero(stringLocation,sizeof(stringLocation));
+                                }
+
+                                break;
                             default:
                                 checkLogOut = 1;
                                 break;
@@ -417,7 +416,7 @@ void *connection_handler(void *newSocket){
             }
         }
         bzero(account_message,sizeof(account_message));
-        printf("ket vong\n");
+        printf("done!----\n");
 	}
 	return 0;
 }
@@ -457,6 +456,23 @@ User* addUser(char inforUserMessage[5000], int idUser){
     return user;
 }
 
+Account* addAccount(char acccount_message[5000]){
+    int i =0;
+    Account* account = createAccountEmpty();
+    char* token = strtok(acccount_message,"_");
+        while(token != NULL){
+        if(i==0){
+            sprintf(account->name,"%s",token);
+        }else{
+            sprintf(account->password,"%s",token);
+        }
+        // printf("%s\n", token);
+        token = strtok(NULL, "_");
+        i++;
+    }
+    return account;
+}
+
 
 LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]){
     int i = 0;
@@ -473,6 +489,23 @@ LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]){
         i++;
     }
     return locationAndTime;
+}
+
+void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){  
+    listUserF1 = (User*)malloc(500*sizeof(User*));
+    listUserF1 = listIdOfF0(con,result);
+    if(!strcmp(listUserF1[0].idUser,"")==0){
+            for(int i = 0; i < 500; i++){
+                if(!(strcmp(listUserF1[i].idUser,"")==0)&& strlen(listUserF1[i].idUser)<5){      
+                    if(!(strcmp(listUserF1[i].idUser,"-1")==0)){
+                        printf("idUser F1:%s\n",listUserF1[i].idUser);
+                        updateState(listUserF1[i].idUser,con,result);
+                    }                                            
+                }else{
+                    break;
+                }       
+            }
+    }
 }
 
 

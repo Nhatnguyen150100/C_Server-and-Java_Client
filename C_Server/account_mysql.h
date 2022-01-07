@@ -8,31 +8,29 @@
 #include <mysql/mysql.h>
 #include "user.h"
 #include "locationAndTime.h"
+#include "account.h"
+#include "locationOftude.h"
 
-#define MAX_IDENT_LEN_NAME 100
-#define MAX_IDENT_LEN_PASSWORD 30
-
-typedef struct {
-    char name[MAX_IDENT_LEN_NAME];
-    char password[MAX_IDENT_LEN_PASSWORD];
-} Account;
 
 // Account* makeAccount(char* nameAccount, char* passwordAccount);
-char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
+
 LocationAndTime* getHistory(User* user, MYSQL *con, MYSQL_RES *result);
 User* listIdOfF0(MYSQL *con, MYSQL_RES *result);
-int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, MYSQL_RES *result);
 bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 bool insertLocationAndTime(LocationAndTime *locationAndTime, User *user, int codeLocation,MYSQL *con, MYSQL_RES *result);
 bool updateStateF0forUser(int idUser ,MYSQL *con, MYSQL_RES *result);
 bool updateStateNormalforUser(int idUser ,MYSQL *con, MYSQL_RES *result);
-void finish_with_error(MYSQL *con);
 bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result);
+char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 char* removeEnterCharacter(char* str);
 char* removeEnterCharacterFromString(char* str);
+char* getLocationOfF0(MYSQL *con, MYSQL_RES *result);
+int createNewAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 void showAllOfInformationsUser(MYSQL *con, MYSQL_RES *result);
+void finish_with_error(MYSQL *con);
+
 
 
 bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result){
@@ -46,6 +44,88 @@ bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result){
         // printf("Update State Successful!\n");
         return true;
     }
+}
+
+char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
+    printf("-----check------");
+    int indexOfListF0 = 0;
+    int indexListLocation = 0;
+    User* listId;
+    LocationOftude* listLocation;
+    listLocation = (LocationOftude*)malloc(500*sizeof(LocationOftude));
+    listId = (User*)malloc(10*sizeof(User*));
+    if (mysql_query(con, "SELECT idUser FROM infor where state = 'F0'")){
+        printf("check error0\n");
+        finish_with_error(con);
+        exit(1);
+    }
+    result = mysql_store_result(con);
+    if (result == NULL){
+      finish_with_error(con);
+      exit(1);
+    }
+    int num_fields = mysql_num_fields(result);
+    MYSQL_ROW row;
+    while ((row = mysql_fetch_row(result))){
+        for(int i = 0; i < num_fields; i++){
+            // printf("i: %d\n", i);
+            sprintf(listId[indexOfListF0].idUser,"%s",row[i]);
+            indexOfListF0++;
+            strcpy(listId[indexOfListF0].idUser,"");
+            printf("F0:%s ", row[i] ? row[i] : "NULL");
+        }
+        printf("\n");
+    }
+    if(!strcmp(listId[0].idUser,"")==0){
+        for(int i = 0; i < 20; i++){
+            if(!strcmp(listId[i].idUser,"")==0){
+                char query[200];
+                sprintf(query,"select distinct locationName,longitude,latitude from mydb.location,mydb.check where mydb.location.idlocation = mydb.check.idlocation and mydb.check.idaccount = \'%s\'",listId[i].idUser);
+                if (mysql_query(con, query)){
+                    printf("check error1");
+                    finish_with_error(con);
+                    exit(1);
+                }
+                result = mysql_store_result(con);
+                if (result == NULL){
+                    finish_with_error(con);
+                }
+                int num_fields = mysql_num_fields(result);
+                MYSQL_ROW row1;
+                while ((row1 = mysql_fetch_row(result))){
+                    bool check = false;                                      
+                        for(int  k = 0; k < indexListLocation; k++){
+                            if(strcmp(listLocation[k].location, row1[0])==0){
+                                check = true;
+                            }
+                        }
+                        if(check==false){
+                            for(int j = 0; j < num_fields; j++){
+                                if(j==0){
+                                    sprintf(listLocation[indexListLocation].location,"%s",row1[0]);
+                                }else if(j==1){
+                                    sprintf(listLocation[indexListLocation].longitude,"%s",row1[1]);
+                                }else{
+                                    sprintf(listLocation[indexListLocation].latitude,"%s",row1[2]);
+                                }                                
+                                indexListLocation++;
+                            }
+                        }                                   
+                }
+            }
+        }
+        char* stringLocation;
+        for(int i = 0; i < indexListLocation; i++){
+            strcat(stringLocation, listLocation[i].location);
+            strcat(stringLocation,listLocation[i].longitude);
+            strcat(stringLocation,listLocation[i].latitude);
+            strcat(stringLocation,"_");
+        }
+        stringLocation = removeEnterCharacter(stringLocation);
+        printf("StringLocation: %s\n", stringLocation);
+        return stringLocation;
+    } 
+    return "";
 }
 
 
@@ -200,7 +280,7 @@ void showAllOfInformationsUser(MYSQL *con, MYSQL_RES *result){
     int num_fields = mysql_num_fields(result);
 
     MYSQL_ROW row;
-    printf("id\tFirst name  Last Name\t    CCCD\t\tNgay sinh\tGioi tinh   sdt\t\t    Email\t\t\tDia chi\t\t\t\t\t\tTinh trang\n");
+    printf("id\tFirst name  Last Name\t    CCCD\t\tNgay sinh\tGioi tinh   Sdt\t\t    Email\t\t\tDia chi\t\t\t\tTinh trang\n\n");
     while ((row = mysql_fetch_row(result))){
       for(int i = 0; i < num_fields; i++){
         if(i==0){
