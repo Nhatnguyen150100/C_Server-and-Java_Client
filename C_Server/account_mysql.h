@@ -47,7 +47,6 @@ bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result){
 }
 
 char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
-    printf("-----check------");
     int indexOfListF0 = 0;
     int indexListLocation = 0;
     User* listId;
@@ -108,23 +107,28 @@ char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
                                 }else{
                                     sprintf(listLocation[indexListLocation].latitude,"%s",row1[2]);
                                 }                                
-                                indexListLocation++;
                             }
-                        }                                   
+                            indexListLocation++; 
+                        }               
                 }
             }
         }
         char* stringLocation;
         for(int i = 0; i < indexListLocation; i++){
             strcat(stringLocation, listLocation[i].location);
+            strcat(stringLocation,"@");
             strcat(stringLocation,listLocation[i].longitude);
+            strcat(stringLocation,"!");
             strcat(stringLocation,listLocation[i].latitude);
             strcat(stringLocation,"_");
         }
         stringLocation = removeEnterCharacter(stringLocation);
-        printf("StringLocation: %s\n", stringLocation);
+        free(listLocation);
+        free(listId);
         return stringLocation;
-    } 
+    }
+    free(listLocation);
+    free(listId); 
     return "";
 }
 

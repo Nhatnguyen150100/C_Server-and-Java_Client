@@ -26,6 +26,8 @@ void finish_with_error(MYSQL *con);
 char* createInfor(User* user, char* str, char inforUserMessage[5000]);
 void createInforBirthDay(User* user, char* str, char inforUserMessage[5000]);
 
+int KiemTraKyTuSo(char *s);
+
 bool upToString(char* client_message,char* server_message);
 
 User* addUser(char inforUserMessage[5000], int idUser);
@@ -227,10 +229,11 @@ void *connection_handler(void *newSocket){
                 int check = write(socket,inforUserToClient,sizeof(inforUserToClient));
                 printf("gui thanh cong first %d\n", check);
                 bzero(inforUserToClient,sizeof(inforUserToClient));
-                char* stringLocation; 
+                char stringLocation[1000]; 
                 char inforUserFromClientUpdate[1000];
                 char messageTimeFromClient[1000];
                 char messageHistory[1000] = "";
+                char* indexMessage;
                 LocationAndTime *locationAndTimeHistory = createLTEmpty();
                 int reader_len_timeFromClient;
                 int reader_len_inforUpdate;
@@ -330,14 +333,24 @@ void *connection_handler(void *newSocket){
                                 break;
                             case 7:
                                 printf("vao 7\n");
-                                stringLocation = getLocationOfF0(con,result);
-                                printf("stringLocation: %s\n",stringLocation);
+                                indexMessage = getLocationOfF0(con,result);
+                                sprintf(stringLocation,"%s",indexMessage);
+                                strcat(stringLocation,"\n");
+                                printf("stringLocation: %s",stringLocation);
                                 if(!strcmp(stringLocation,"")==0){
-                                    write(socket,stringLocation, sizeof(stringLocation));
-                                    printf("gui thanh cong location: %s\n", stringLocation);
-                                    bzero(stringLocation,sizeof(stringLocation));
+                                    int check = write(socket,stringLocation, sizeof(stringLocation));
+                                    if(check>0){
+                                    printf("gui thanh cong location: %s", stringLocation);
+                                    }
+                                }else{
+                                    char stringLocationEmpty[1000] = "khong co dia diem\n";
+                                    int check = write(socket,stringLocationEmpty, sizeof(stringLocationEmpty));
+                                    if(check>0){
+                                    printf("gui thanh cong 0");
+                                    bzero(stringLocationEmpty,sizeof(stringLocationEmpty));
+                                    }
                                 }
-
+                                bzero(stringLocation,sizeof(stringLocation));
                                 break;
                             default:
                                 checkLogOut = 1;
@@ -497,7 +510,7 @@ void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){
     if(!strcmp(listUserF1[0].idUser,"")==0){
             for(int i = 0; i < 500; i++){
                 if(!(strcmp(listUserF1[i].idUser,"")==0)&& strlen(listUserF1[i].idUser)<5){      
-                    if(!(strcmp(listUserF1[i].idUser,"-1")==0)){
+                    if(KiemTraKyTuSo(listUserF1[i].idUser)==0){
                         printf("idUser F1:%s\n",listUserF1[i].idUser);
                         updateState(listUserF1[i].idUser,con,result);
                     }                                            
@@ -506,6 +519,23 @@ void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){
                 }       
             }
     }
+}
+
+int KiemTraKyTuSo(char *s){
+            int i,ok;
+            for(i=0; i<strlen(s); i++) {
+                        if(s[i] >= '0' && s[i] <= '9') {
+                                    ok = 1;
+                        } else {
+                                    ok = 0;
+                                    break;
+                        }
+            }
+            if(ok == 1){
+                return 0;
+            }else{
+                return -1;
+            }
 }
 
 
