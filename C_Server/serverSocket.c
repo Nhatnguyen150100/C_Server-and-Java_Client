@@ -217,7 +217,7 @@ void *connection_handler(void *newSocket){
             printf("password:%s\n", accountPassword);
             accountName = strtok(account_message,"_");
             bzero(client_message,sizeof(client_message));
-            char* idaccount = checkNameAccount(accountName,accountPassword,con,result);
+            char* idaccount = checkNamePasswordAccount(accountName,accountPassword,con,result);
             if(strcmp(idaccount,"false") != 0){
                 char server_send_message[100] = "Login successfully: Welcome to PC COVID\n"; 
                 write(socket, server_send_message, sizeof(server_send_message));
@@ -335,6 +335,7 @@ void *connection_handler(void *newSocket){
                                 printf("vao 7\n");
                                 indexMessage = getLocationOfF0(con,result);
                                 sprintf(stringLocation,"%s",indexMessage);
+                                bzero(indexMessage,sizeof(indexMessage));
                                 strcat(stringLocation,"\n");
                                 printf("stringLocation: %s",stringLocation);
                                 if(!strcmp(stringLocation,"")==0){
@@ -342,6 +343,7 @@ void *connection_handler(void *newSocket){
                                     if(check>0){
                                     printf("gui thanh cong location: %s", stringLocation);
                                     }
+                                    bzero(stringLocation,sizeof(stringLocation));
                                 }else{
                                     char stringLocationEmpty[1000] = "khong co dia diem\n";
                                     int check = write(socket,stringLocationEmpty, sizeof(stringLocationEmpty));
@@ -350,7 +352,6 @@ void *connection_handler(void *newSocket){
                                     bzero(stringLocationEmpty,sizeof(stringLocationEmpty));
                                     }
                                 }
-                                bzero(stringLocation,sizeof(stringLocation));
                                 break;
                             default:
                                 checkLogOut = 1;

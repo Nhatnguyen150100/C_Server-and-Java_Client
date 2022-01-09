@@ -24,6 +24,7 @@ bool updateStateF0forUser(int idUser ,MYSQL *con, MYSQL_RES *result);
 bool updateStateNormalforUser(int idUser ,MYSQL *con, MYSQL_RES *result);
 bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result);
 char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
+char* checkNamePasswordAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result);
 char* removeEnterCharacter(char* str);
 char* removeEnterCharacterFromString(char* str);
 char* getLocationOfF0(MYSQL *con, MYSQL_RES *result);
@@ -339,6 +340,30 @@ bool updateStateNormalforUser(int idUser ,MYSQL *con, MYSQL_RES *result){
 char* checkNameAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
     char query[1000];
     sprintf(query,"SELECT idaccount FROM account where userName = \'%s\'", name);
+    // printf("Query check account:%s\n", query);
+    if (mysql_query(con, query)){
+      finish_with_error(con);
+    }
+    result = mysql_store_result(con);
+    if (result == NULL){
+      finish_with_error(con);
+    }
+    MYSQL_ROW row;
+    char *idaccount;
+    // int num_fields = mysql_num_fields(result);
+    // printf("num_fields: %d\n", num_fields);
+    
+    if(row = mysql_fetch_row(result)){
+        idaccount = row[0];
+        return idaccount;
+    }else{
+        return "false";
+    }
+}
+
+char* checkNamePasswordAccount(char* name, char* password, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"SELECT idaccount FROM account where userName = \'%s\' and password = \'%s\'",name,password); 
     // printf("Query check account:%s\n", query);
     if (mysql_query(con, query)){
       finish_with_error(con);
