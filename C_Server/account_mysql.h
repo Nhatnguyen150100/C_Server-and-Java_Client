@@ -50,6 +50,8 @@ bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result){
 char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
     int indexOfListF0 = 0;
     int indexListLocation = 0;
+    char *list;
+    char stringLocation[2000]="";
     User* listId;
     LocationOftude* listLocation;
     listLocation = (LocationOftude*)malloc(500*sizeof(LocationOftude));
@@ -72,9 +74,9 @@ char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
             sprintf(listId[indexOfListF0].idUser,"%s",row[i]);
             indexOfListF0++;
             strcpy(listId[indexOfListF0].idUser,"");
-            printf("F0:%s ", row[i] ? row[i] : "NULL");
+            // printf("F0:%s ", row[i] ? row[i] : "NULL");
         }
-        printf("\n");
+        // printf("\n");
     }
     if(!strcmp(listId[0].idUser,"")==0){
         for(int i = 0; i < 20; i++){
@@ -114,19 +116,23 @@ char* getLocationOfF0(MYSQL *con, MYSQL_RES *result){
                 }
             }
         }
-        char* stringLocation;
         for(int i = 0; i < indexListLocation; i++){
             strcat(stringLocation, listLocation[i].location);
             strcat(stringLocation,"@");
             strcat(stringLocation,listLocation[i].longitude);
             strcat(stringLocation,"!");
             strcat(stringLocation,listLocation[i].latitude);
-            strcat(stringLocation,"_");
+            if(i!=indexListLocation-1){
+                strcat(stringLocation,"_");
+            }     
+            // printf("listLocation[i].location: %s\n",stringLocation);  
         }
-        stringLocation = removeEnterCharacter(stringLocation);
+        sprintf(list,"%s",stringLocation);
+        // printf("list %s\n", stringLocation);
+        // stringLocation = removeEnterCharacter(stringLocation);
         free(listLocation);
         free(listId);
-        return stringLocation;
+        return list;
     }
     free(listLocation);
     free(listId); 
@@ -552,6 +558,7 @@ bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
 
 void finish_with_error(MYSQL *con)
 {
+printf("check2\n");
   fprintf(stderr, "%s\n", mysql_error(con));
   mysql_close(con);
 }

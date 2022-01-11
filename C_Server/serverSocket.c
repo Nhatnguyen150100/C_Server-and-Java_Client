@@ -12,6 +12,7 @@
 #include "account_mysql.h"
 #include "user.h"
 #include "locationAndTime.h"
+#include "locationOftude.h"
 
 #define PORT 9999
 #define HOST_MYSQL "localhost"
@@ -181,12 +182,12 @@ void *connection_handler(void *newSocket){
       fprintf(stderr, "mysql_init() failed\n");
       exit(1);
     }
-
     if (mysql_real_connect(con, HOST_MYSQL, USER_MYSQL, PASSWORD_MYSQL,DB_MYSQL, 0, NULL, 0) == NULL){
         finish_with_error(con);
     }else{
 	    printf("Mysql connect success!\n");
     }
+    printf("check1\n");
     MYSQL_RES *result = mysql_store_result(con);
     int socket = *(int*) newSocket;
 	int read_len, reader;
@@ -332,24 +333,24 @@ void *connection_handler(void *newSocket){
                                 }
                                 break;
                             case 7:
-                                printf("vao 7\n");
                                 indexMessage = getLocationOfF0(con,result);
-                                sprintf(stringLocation,"%s",indexMessage);
+                                // printf("indexmessage %s\n", indexMessage);
+                                strcpy(stringLocation,indexMessage);
                                 bzero(indexMessage,sizeof(indexMessage));
                                 strcat(stringLocation,"\n");
-                                printf("stringLocation: %s",stringLocation);
+                                // printf("stringLocation: %s",stringLocation);
                                 if(!strcmp(stringLocation,"")==0){
                                     int check = write(socket,stringLocation, sizeof(stringLocation));
                                     if(check>0){
-                                    printf("gui thanh cong location: %s", stringLocation);
+                                        printf("gui thanh cong location: %s", stringLocation);
                                     }
                                     bzero(stringLocation,sizeof(stringLocation));
                                 }else{
                                     char stringLocationEmpty[1000] = "khong co dia diem\n";
                                     int check = write(socket,stringLocationEmpty, sizeof(stringLocationEmpty));
                                     if(check>0){
-                                    printf("gui thanh cong 0");
-                                    bzero(stringLocationEmpty,sizeof(stringLocationEmpty));
+                                        printf("gui thanh cong 0");
+                                        bzero(stringLocationEmpty,sizeof(stringLocationEmpty));
                                     }
                                 }
                                 break;
@@ -363,7 +364,6 @@ void *connection_handler(void *newSocket){
                         break;
                     }
                 }
-
                 if(checkLogOut == 1){
                     bzero(account_message,sizeof(account_message));
                     free(user);
