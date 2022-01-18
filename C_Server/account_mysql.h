@@ -10,6 +10,7 @@
 #include "locationAndTime.h"
 #include "account.h"
 #include "locationOftude.h"
+#include "formdeclare.h"
 
 
 // Account* makeAccount(char* nameAccount, char* passwordAccount);
@@ -20,6 +21,7 @@ bool checkPasswordAcount(char* nameAccoount, char* passwordAccount,MYSQL *con, M
 bool insertInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result);
 bool insertLocationAndTime(LocationAndTime *locationAndTime, User *user, int codeLocation,MYSQL *con, MYSQL_RES *result);
+bool insertFormDecalre(Formdeclare *formDeclare, MYSQL *con, MYSQL_RES *result);
 bool updateStateF0forUser(int idUser ,MYSQL *con, MYSQL_RES *result);
 bool updateStateNormalforUser(int idUser ,MYSQL *con, MYSQL_RES *result);
 bool updateState(char* idUser,MYSQL *con, MYSQL_RES *result);
@@ -543,6 +545,19 @@ bool insertLocationAndTime(LocationAndTime *locationAndTime, User *user, int cod
     }
 }
 
+bool insertFormDecalre(Formdeclare *formDeclare, MYSQL *con, MYSQL_RES *result){
+    char query[1000];
+    sprintf(query,"INSERT INTO mydb.formdeclare VALUES(%s,\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\',\'%s\')", formDeclare->idUser, formDeclare->numberOfVehicle, formDeclare->addressCome, formDeclare->addressTo, formDeclare->localDate, formDeclare->cityCome, formDeclare->cityTo, formDeclare->districtCome, formDeclare->districtTo, formDeclare->vehicle);
+    printf("query insert formDeclare: %s\n", query);
+    if (mysql_query(con, query)){
+        printf("INSERT FORMDECLARE ERROR!\n");
+      finish_with_error(con);
+      return false;
+    }else{
+        return true;
+    }
+}
+
 bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
     char query[1000];
     sprintf(query,"UPDATE infor set firstName = \'%s\', lastName = \'%s\', cardId = \'%s\', birthOfDay = \'%s\', gender = \'%s\', numberPhone = \'%s\', email = \'%s\', address = \'%s\', state = \'%s\' where idUser = %s", user->firstName,user->lastName,user->cardId,user->birthday,user->gender,user->numberPhone,user->address,user->email,user->state, user->idUser);
@@ -558,7 +573,6 @@ bool updateInforAccount(User *user, MYSQL *con, MYSQL_RES *result){
 
 void finish_with_error(MYSQL *con)
 {
-printf("check2\n");
   fprintf(stderr, "%s\n", mysql_error(con));
   mysql_close(con);
 }

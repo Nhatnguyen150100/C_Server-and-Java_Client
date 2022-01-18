@@ -13,6 +13,7 @@
 #include "user.h"
 #include "locationAndTime.h"
 #include "locationOftude.h"
+#include "formdeclare.h"
 
 #define PORT 9999
 #define HOST_MYSQL "localhost"
@@ -34,6 +35,7 @@ bool upToString(char* client_message,char* server_message);
 User* addUser(char inforUserMessage[5000], int idUser);
 Account* addAccount(char acccount_message[5000]);
 LocationAndTime* addLocationAndTine(char inforLocationandTime[5000]);
+Formdeclare* addFormdeclare(char formdeclareInfor[5000], int idUser);
 
 
 User* listUserF1;
@@ -90,7 +92,6 @@ int main(){
                         bool checkUpdate = updateStateNormalforUser(idUser,con,result);
                         if(checkUpdate==true){
                             printf("Update thanh cong\n");
-                            autoTruyVetF1(listUserF1,con,result);
                         }else{
                             printf("Update khong thanh cong\n");
                         }
@@ -187,7 +188,7 @@ void *connection_handler(void *newSocket){
     }else{
 	    printf("Mysql connect success!\n");
     }
-    printf("check1\n");
+
     MYSQL_RES *result = mysql_store_result(con);
     int socket = *(int*) newSocket;
 	int read_len, reader;
@@ -232,12 +233,15 @@ void *connection_handler(void *newSocket){
                 bzero(inforUserToClient,sizeof(inforUserToClient));
                 char stringLocation[1000]; 
                 char inforUserFromClientUpdate[1000];
+                char formdeclare[1000];
                 char messageTimeFromClient[1000];
                 char messageHistory[1000] = "";
                 char* indexMessage;
                 LocationAndTime *locationAndTimeHistory = createLTEmpty();
+                Formdeclare* formDeclare = createFormdeclareEmpty();
                 int reader_len_timeFromClient;
                 int reader_len_inforUpdate;
+                int reader_len_formdeclare;
                 int checkLogOut = 0;
                 int setTime = 0;
                 while (checkLogOut==0){
@@ -351,6 +355,21 @@ void *connection_handler(void *newSocket){
                                     if(check>0){
                                         printf("gui thanh cong 0");
                                         bzero(stringLocationEmpty,sizeof(stringLocationEmpty));
+                                    }
+                                }
+                                break;
+                            case 8:
+                                reader_len_formdeclare = recv(socket,formdeclare,1000,0);
+                                if(reader_len_formdeclare>0){
+                                    sprintf(formdeclare,"%s",removeEnterCharacterFromString(formdeclare));
+                                    int idUser_index = atoi(user->idUser);
+                                    formDeclare = addFormdeclare(formdeclare,idUser_index);
+                                    bool checkInsertFormDeclare = insertFormDecalre(formDeclare,con,result);
+                                    if(checkInsertFormDeclare==true){
+                                        char inforUpdateSuccessMessage[1000] = "Khai bao thanh cong\n";
+                                        write(socket,inforUpdateSuccessMessage, sizeof(inforUpdateSuccessMessage));
+                                        bzero(inforUpdateSuccessMessage,sizeof(inforUpdateSuccessMessage));
+                                        free(formDeclare);
                                     }
                                 }
                                 break;
@@ -470,6 +489,39 @@ User* addUser(char inforUserMessage[5000], int idUser){
     return user;
 }
 
+
+Formdeclare* addFormdeclare(char formdeclareInfor[5000], int idUser){
+    int i = 0;
+    Formdeclare *formdeclare = createFormdeclareEmpty();
+    sprintf(formdeclare->idUser,"%d",idUser);
+    char* token = strtok(formdeclareInfor,"_");
+    while(token != NULL){
+        if(i==0){
+            sprintf(formdeclare->numberOfVehicle,"%s",token);
+        }else if(i==1){
+            sprintf(formdeclare->addressCome,"%s",token);
+        }else if(i==2){
+            sprintf(formdeclare->addressTo,"%s",token);
+        }else if(i==3){
+            sprintf(formdeclare->localDate,"%s",token);
+        }else if(i==4){
+            sprintf(formdeclare->cityCome,"%s",token);
+        }else if(i==5){
+            sprintf(formdeclare->cityTo,"%s",token);
+        }else if(i==6){
+            sprintf(formdeclare->districtCome,"%s",token);
+        }else if(i==7){
+            sprintf(formdeclare->districtTo,"%s",token);
+        }else if(i==8){
+            sprintf(formdeclare->vehicle,"%s",token);
+        }
+        // printf("%s\n", token);
+        token = strtok(NULL, "_");
+        i++;
+    }
+    return formdeclare;
+}
+
 Account* addAccount(char acccount_message[5000]){
     int i =0;
     Account* account = createAccountEmpty();
@@ -512,7 +564,7 @@ void autoTruyVetF1(User* listUserF1, MYSQL *con, MYSQL_RES *result){
             for(int i = 0; i < 500; i++){
                 if(!(strcmp(listUserF1[i].idUser,"")==0)&& strlen(listUserF1[i].idUser)<5){      
                     if(KiemTraKyTuSo(listUserF1[i].idUser)==0){
-                        printf("idUser F1:%s\n",listUserF1[i].idUser);
+                        // printf("idUser F1:%s\n",listUserF1[i].idUser);
                         updateState(listUserF1[i].idUser,con,result);
                     }                                            
                 }else{
